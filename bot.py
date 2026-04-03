@@ -1,8 +1,8 @@
 """Reference implementation of a random Kriegspiel bot that asks first.
 
 This bot behaves like the plain random bot, but whenever the server offers the
-"ask any pawn captures?" action it uses that first, refreshes its state, and
-then picks a random allowed move from the narrower follow-up position.
+"ask any pawn captures?" action it uses that first and waits for the next poll
+before attempting a move from the narrower follow-up position.
 """
 
 import argparse
@@ -289,24 +289,24 @@ def maybe_play_game(game_id: str) -> bool:
     if state.get("state") != "active" or state.get("turn") != state.get("your_color"):
         return False
 
-    if "ask_any" in state.get("possible_actions", []):
+    possible_actions = state.get("possible_actions", [])
+
+    if "ask_any" in possible_actions:
         result = post_json(f"/api/game/{game_id}/ask-any")
         print(f"{game_id}: ask-any -> {result['announcement']}")
-        state = get_json(f"/api/game/{game_id}/state")
-        if state.get("state") != "active" or state.get("turn") != state.get("your_color"):
-            return False
+        return True
 
-    if "move" not in state.get("possible_actions", []):
+    if "move" not in possible_actions:
         return False
 
-    # Try common moves first. We optimistically walk the shuffled legal list;
-    # the API remains the source of truth and will reject anything stale.
-    for uci in choose_random_moves(state.get("allowed_moves", [])):
-        result = post_json(f"/api/game/{game_id}/move", {"uci": uci})
-        print(f"{game_id}: tried {uci} -> {result['announcement']}")
-        if result.get("move_done"):
-            return True
-    return False
+    moves = choose_random_moves(state.get("allowed_moves", []))
+    if not moves:
+        return False
+
+    uci = moves[0]
+    result = post_json(f"/api/game/{game_id}/move", {"uci": uci})
+    print(f"{game_id}: tried {uci} -> {result['announcement']}")
+    return bool(result.get("move_done"))
 
 
 def run_loop(poll_seconds: float) -> None:
