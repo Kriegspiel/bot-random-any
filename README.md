@@ -33,6 +33,7 @@ That behavior is controlled with:
 - `KRIEGSPIEL_AUTO_CREATE_LOBBY_GAME=true|false`
 - `KRIEGSPIEL_AUTO_CREATE_RULE_VARIANT=berkeley|berkeley_any`
 - `KRIEGSPIEL_AUTO_CREATE_PLAY_AS=white|black|random`
+- `KRIEGSPIEL_SUPPORTED_RULE_VARIANTS=berkeley_any`
 
 The bot will not intentionally create or join beyond 10 active games in parallel.
 
