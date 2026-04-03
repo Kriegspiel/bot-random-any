@@ -94,6 +94,7 @@ def register_bot() -> None:
             "display_name": os.environ["KRIEGSPIEL_BOT_DISPLAY_NAME"],
             "owner_email": os.environ["KRIEGSPIEL_BOT_OWNER_EMAIL"],
             "description": os.environ.get("KRIEGSPIEL_BOT_DESCRIPTION", ""),
+            "supported_rule_variants": supported_rule_variants(),
         },
         timeout=DEFAULT_TIMEOUT_SECONDS,
     )
@@ -144,6 +145,16 @@ def create_payload() -> dict[str, str]:
     }
 
 
+def supported_rule_variants() -> list[str]:
+    raw = os.environ.get("KRIEGSPIEL_SUPPORTED_RULE_VARIANTS", "berkeley_any")
+    variants: list[str] = []
+    for item in raw.split(","):
+        value = item.strip()
+        if value in {"berkeley", "berkeley_any"} and value not in variants:
+            variants.append(value)
+    return variants or ["berkeley_any"]
+
+
 def active_games(games: list[dict]) -> list[dict]:
     return [game for game in games if game.get("state") == "active"]
 
@@ -163,6 +174,8 @@ def open_bot_lobby_candidates(open_games: list[dict], *, profile_lookup=None) ->
     for game in open_games:
         creator_username = str(game.get("created_by") or "").strip()
         if not creator_username:
+            continue
+        if str(game.get("rule_variant") or "").strip() not in supported_rule_variants():
             continue
         creator_username_lower = creator_username.lower()
         if creator_username_lower == own_username:
