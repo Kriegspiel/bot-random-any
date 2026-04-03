@@ -1,0 +1,15 @@
+[Unit]
+Description=Kriegspiel Random Any Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fil
+WorkingDirectory=/home/fil/dev/kriegspiel/bot-random-any
+ExecStart=/home/fil/dev/kriegspiel/bot-random-any/.venv/bin/python /home/fil/dev/kriegspiel/bot-random-any/bot.py --poll-seconds 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
