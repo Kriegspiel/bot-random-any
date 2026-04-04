@@ -74,23 +74,34 @@ class BotTests(unittest.TestCase):
             self.assertTrue(bot.has_own_waiting_game([{"game_code": "ABC123", "created_by": "randobot"}]))
             self.assertFalse(bot.has_own_waiting_game([{"game_code": "XYZ789", "created_by": "gptnano"}]))
 
-    def test_maybe_play_game_asks_any_and_waits_for_next_poll(self) -> None:
-        state = {
-            "state": "active",
-            "turn": "white",
-            "your_color": "white",
-            "possible_actions": ["move", "ask_any"],
-            "allowed_moves": ["e2e4", "d2d4"],
-        }
+    def test_maybe_play_game_asks_any_before_random_move(self) -> None:
+        states = [
+            {
+                "state": "active",
+                "turn": "white",
+                "your_color": "white",
+                "possible_actions": ["move", "ask_any"],
+                "allowed_moves": ["e2e4", "d2d4"],
+            },
+            {
+                "state": "active",
+                "turn": "white",
+                "your_color": "white",
+                "possible_actions": ["move"],
+                "allowed_moves": ["d2d4"],
+            },
+        ]
         posts: list[tuple[str, dict | None]] = []
 
         def fake_get_json(path: str) -> dict:
             self.assertEqual(path, "/api/game/game-1/state")
-            return state
+            return states.pop(0)
 
         def fake_post_json(path: str, payload: dict | None = None) -> dict:
             posts.append((path, payload))
-            return {"announcement": "No pawn captures."}
+            if path.endswith("/ask-any"):
+                return {"announcement": "No pawn captures."}
+            return {"announcement": "Move complete", "move_done": True}
 
         with patch.object(bot, "get_json", side_effect=fake_get_json):
             with patch.object(bot, "post_json", side_effect=fake_post_json):
@@ -98,10 +109,13 @@ class BotTests(unittest.TestCase):
 
         self.assertEqual(
             posts,
-            [("/api/game/game-1/ask-any", None)],
+            [
+                ("/api/game/game-1/ask-any", None),
+                ("/api/game/game-1/move", {"uci": "d2d4"}),
+            ],
         )
 
-    def test_maybe_play_game_attempts_only_one_move_after_ask_cycle(self) -> None:
+    def test_maybe_play_game_retries_moves_with_delay_until_one_succeeds(self) -> None:
         state = {
             "state": "active",
             "turn": "white",
@@ -110,17 +124,29 @@ class BotTests(unittest.TestCase):
             "allowed_moves": ["e2e4", "d2d4", "g1f3"],
         }
         posts: list[tuple[str, dict | None]] = []
+        results = [
+            {"announcement": "Illegal move", "move_done": False},
+            {"announcement": "Move complete", "move_done": True},
+        ]
 
         def fake_post_json(path: str, payload: dict | None = None) -> dict:
             posts.append((path, payload))
-            return {"announcement": "Illegal move", "move_done": False}
+            return results.pop(0)
 
         with patch.object(bot, "get_json", return_value=state):
             with patch.object(bot, "choose_random_moves", return_value=["d2d4", "e2e4", "g1f3"]):
                 with patch.object(bot, "post_json", side_effect=fake_post_json):
-                    self.assertFalse(bot.maybe_play_game("game-1"))
+                    with patch.object(bot.time, "sleep") as sleep_mock:
+                        self.assertTrue(bot.maybe_play_game("game-1"))
 
-        self.assertEqual(posts, [("/api/game/game-1/move", {"uci": "d2d4"})])
+        self.assertEqual(
+            posts,
+            [
+                ("/api/game/game-1/move", {"uci": "d2d4"}),
+                ("/api/game/game-1/move", {"uci": "e2e4"}),
+            ],
+        )
+        sleep_mock.assert_called_once_with(bot.FAILED_MOVE_RETRY_DELAY_SECONDS)
 
 
 if __name__ == "__main__":
