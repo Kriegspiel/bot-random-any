@@ -50,16 +50,40 @@ class BotTests(unittest.TestCase):
 
         self.assertEqual([game["game_code"] for game in candidates], ["ANY123"])
 
-    def test_choose_bot_game_to_join_respects_probability(self) -> None:
+    def test_choose_bot_game_to_join_returns_candidate(self) -> None:
         games = [{"game_code": "BOT123", "created_by": "gptnano", "rule_variant": "berkeley_any"}]
 
         with patch.dict("os.environ", {"KRIEGSPIEL_BOT_USERNAME": "randobotany"}):
-            with patch.object(bot.random, "random", return_value=0.9):
-                self.assertIsNone(bot.choose_bot_game_to_join(games, rng=bot.random))
-            with patch.object(bot.random, "random", return_value=0.1):
-                with patch.object(bot.random, "choice", side_effect=lambda items: items[0]):
-                    with patch.object(bot, "get_public_user", return_value={"role": "bot"}):
-                        self.assertEqual(bot.choose_bot_game_to_join(games, rng=bot.random)["game_code"], "BOT123")
+            with patch.object(bot.random, "choice", side_effect=lambda items: items[0]):
+                with patch.object(bot, "get_public_user", return_value={"role": "bot"}):
+                    self.assertEqual(bot.choose_bot_game_to_join(games, rng=bot.random)["game_code"], "BOT123")
+
+    def test_maybe_join_bot_lobby_game_records_attempt_even_when_probability_misses(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / ".bot-state.json"
+            mine = {"games": []}
+            open_games = {"games": [{"game_code": "BOT123", "created_by": "gptnano", "rule_variant": "berkeley_any"}]}
+
+            def fake_get_json(path: str) -> dict:
+                if path == "/api/game/mine":
+                    return mine
+                if path == "/api/game/open":
+                    return open_games
+                raise AssertionError(path)
+
+            with patch.object(bot, "STATE_PATH", state_path):
+                with patch.dict("os.environ", {"KRIEGSPIEL_BOT_USERNAME": "randobotany"}):
+                    with patch.object(bot, "get_json", side_effect=fake_get_json):
+                        with patch.object(bot, "get_public_user", return_value={"role": "bot"}):
+                            with patch.object(bot.random, "choice", side_effect=lambda items: items[0]):
+                                with patch.object(bot.random, "random", return_value=0.9):
+                                    with patch.object(bot.time, "time", return_value=0.0):
+                                        with patch.object(bot, "post_json") as post_mock:
+                                            self.assertFalse(bot.maybe_join_bot_lobby_game(rng=bot.random))
+
+                self.assertFalse(bot.can_attempt_bot_join(now=30.0))
+                self.assertTrue(bot.can_attempt_bot_join(now=61.0))
+                post_mock.assert_not_called()
 
     def test_can_attempt_bot_join_uses_local_cooldown_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

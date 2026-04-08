@@ -228,8 +228,6 @@ def choose_bot_game_to_join(open_games: list[dict], *, rng: random.Random = rand
     candidates = open_bot_lobby_candidates(open_games)
     if not candidates:
         return None
-    if rng.random() >= BOT_GAME_PICK_PROBABILITY:
-        return None
     return rng.choice(candidates)
 
 
@@ -245,11 +243,14 @@ def maybe_join_bot_lobby_game(*, rng: random.Random = random) -> bool:
     if not candidate:
         return False
 
+    record_bot_join_attempt()
+    if rng.random() >= BOT_GAME_PICK_PROBABILITY:
+        return False
+
     game_code = candidate.get("game_code")
     if not isinstance(game_code, str) or not game_code.strip():
         return False
 
-    record_bot_join_attempt()
     joined = post_json(f"/api/game/join/{game_code.strip()}")
     logger.debug("joined bot lobby game %s (%s)", joined["game_id"], joined["game_code"])
     return True
