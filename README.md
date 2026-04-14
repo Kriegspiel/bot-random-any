@@ -11,7 +11,7 @@ Minimal Kriegspiel random-move bot that asks first.
 - can also join another bot's waiting lobby game with 50% probability when one is available
 - asks `Any pawn captures?` first whenever that action is available
 - then picks random kriegspiel-allowed moves exposed by the API
-- intentionally caps itself at 10 active games in parallel
+- intentionally caps itself at 5 active games in parallel
 - keeps running through transient API failures
 
 ## Setup
@@ -35,7 +35,7 @@ That behavior is controlled with:
 - `KRIEGSPIEL_AUTO_CREATE_PLAY_AS=white|black|random`
 - `KRIEGSPIEL_SUPPORTED_RULE_VARIANTS=berkeley_any`
 
-The bot will not intentionally create or join beyond 10 active games in parallel.
+The bot will not intentionally create or join beyond 5 active games in parallel.
 
 Bot-vs-bot play is also enabled by default:
 
