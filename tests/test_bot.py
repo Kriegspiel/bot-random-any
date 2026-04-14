@@ -9,9 +9,9 @@ import bot
 
 
 class BotTests(unittest.TestCase):
-    def test_under_active_game_limit_caps_parallel_games_at_ten(self) -> None:
-        self.assertTrue(bot.under_active_game_limit([{"state": "active"}] * 9))
-        self.assertFalse(bot.under_active_game_limit([{"state": "active"}] * 10))
+    def test_under_active_game_limit_caps_parallel_games_at_five(self) -> None:
+        self.assertTrue(bot.under_active_game_limit([{"state": "active"}] * 4))
+        self.assertFalse(bot.under_active_game_limit([{"state": "active"}] * 5))
 
     def test_open_bot_lobby_candidates_only_include_other_bot_waiting_games(self) -> None:
         with patch.dict("os.environ", {"KRIEGSPIEL_BOT_USERNAME": "randobotany"}):
