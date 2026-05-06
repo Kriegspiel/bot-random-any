@@ -65,9 +65,9 @@ class BotTests(unittest.TestCase):
             open_games = {"games": [{"game_code": "BOT123", "created_by": "gptnano", "rule_variant": "berkeley_any"}]}
 
             def fake_get_json(path: str) -> dict:
-                if path == "/api/game/mine":
+                if path == "/game/mine":
                     return mine
-                if path == "/api/game/open":
+                if path == "/game/open":
                     return open_games
                 raise AssertionError(path)
 
@@ -118,7 +118,7 @@ class BotTests(unittest.TestCase):
         posts: list[tuple[str, dict | None]] = []
 
         def fake_get_json(path: str) -> dict:
-            self.assertEqual(path, "/api/game/game-1/state")
+            self.assertEqual(path, "/game/game-1/state")
             return states.pop(0)
 
         def fake_post_json(path: str, payload: dict | None = None) -> dict:
@@ -134,8 +134,8 @@ class BotTests(unittest.TestCase):
         self.assertEqual(
             posts,
             [
-                ("/api/game/game-1/ask-any", None),
-                ("/api/game/game-1/move", {"uci": "d2d4"}),
+                ("/game/game-1/ask-any", None),
+                ("/game/game-1/move", {"uci": "d2d4"}),
             ],
         )
 
@@ -166,8 +166,8 @@ class BotTests(unittest.TestCase):
         self.assertEqual(
             posts,
             [
-                ("/api/game/game-1/move", {"uci": "d2d4"}),
-                ("/api/game/game-1/move", {"uci": "e2e4"}),
+                ("/game/game-1/move", {"uci": "d2d4"}),
+                ("/game/game-1/move", {"uci": "e2e4"}),
             ],
         )
         sleep_mock.assert_called_once_with(bot.FAILED_MOVE_RETRY_DELAY_SECONDS)
