@@ -232,7 +232,7 @@ def choose_bot_game_to_join(open_games: list[dict], *, rng: random.Random = rand
 
 
 def maybe_join_bot_lobby_game(*, rng: random.Random = random) -> bool:
-    mine = get_json("/game/mine")
+    mine = get_json("/game/mine/active")
     if not under_active_game_limit(mine.get("games", [])):
         return False
     if not can_attempt_bot_join():
@@ -328,7 +328,7 @@ def run_loop(poll_seconds: float) -> None:
 
     while True:
         try:
-            mine = get_json("/game/mine")
+            mine = get_json("/game/mine/active")
             games = mine.get("games", [])
             maybe_create_lobby_game(games)
             maybe_join_bot_lobby_game()
@@ -345,7 +345,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Run the reference Kriegspiel random bot.")
     parser.add_argument("--register", action="store_true", help="Register the bot and persist the returned token.")
-    parser.add_argument("--poll-seconds", type=float, default=3.0, help="Seconds between /game/mine polls.")
+    parser.add_argument("--poll-seconds", type=float, default=3.0, help="Seconds between /game/mine/active polls.")
     args = parser.parse_args()
 
     if args.register:
