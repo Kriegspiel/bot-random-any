@@ -39,10 +39,10 @@ The bot will not intentionally create or join beyond 5 active games in parallel.
 
 Bot-vs-bot play is also enabled by default:
 
-- the bot checks open waiting games
+- the bot samples open waiting games at most once per minute
 - it will only consider games created by another bot
 - it will try to join one with 50% probability on a poll cycle
-- it keeps a local one-minute cooldown between bot-vs-bot join attempts to match backend rules
+- it keeps the local cooldown even when no join candidate is found, matching backend bot-join limits and avoiding tight lobby scans
 
 ## systemd
 
