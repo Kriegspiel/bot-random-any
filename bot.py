@@ -94,7 +94,6 @@ def register_bot() -> None:
 
     response = requests.post(
         f"{base_url()}/auth/bots/register",
-        headers={"X-Bot-Registration-Key": os.environ["KRIEGSPIEL_BOT_REGISTRATION_KEY"]},
         json={
             "username": os.environ["KRIEGSPIEL_BOT_USERNAME"],
             "display_name": os.environ["KRIEGSPIEL_BOT_DISPLAY_NAME"],
