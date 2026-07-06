@@ -20,9 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent
 STATE_PATH = BASE_DIR / ".bot-state.json"
 ENV_PATH = BASE_DIR / ".env"
 DEFAULT_TIMEOUT_SECONDS = 20
-BOT_JOIN_COOLDOWN_SECONDS = 60
-BOT_GAME_PICK_PROBABILITY = 0.5
-MAX_ACTIVE_GAMES = 5
+BOT_JOIN_COOLDOWN_SECONDS = int(os.environ.get("BOT_JOIN_COOLDOWN_SECONDS", "300"))
+BOT_GAME_PICK_PROBABILITY = float(os.environ.get("BOT_GAME_PICK_PROBABILITY", "0.01"))
+MAX_ACTIVE_GAMES = int(os.environ.get("KRIEGSPIEL_MAX_ACTIVE_GAMES", "10"))
 FAILED_MOVE_RETRY_DELAY_SECONDS = 1
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
@@ -231,10 +231,11 @@ def choose_bot_game_to_join(open_games: list[dict], *, rng: random.Random = rand
 
 
 def maybe_join_bot_lobby_game(*, rng: random.Random = random) -> bool:
+    if not can_attempt_bot_join():
+        return False
+
     mine = get_json("/game/mine/active")
     if not under_active_game_limit(mine.get("games", [])):
-        return False
-    if not can_attempt_bot_join():
         return False
 
     record_bot_join_attempt()

@@ -8,10 +8,10 @@ Minimal Kriegspiel random-move bot that asks first.
 - authenticates with a bot bearer token
 - polls assigned games
 - can keep one open human-joinable lobby game advertised
-- can also join another bot's waiting lobby game with 50% probability when one is available
+- can also join another bot's waiting lobby game with 1% probability when one is available
 - asks `Any pawn captures?` first whenever that action is available
 - then picks random kriegspiel-allowed moves exposed by the API
-- intentionally caps itself at 5 active games in parallel
+- intentionally caps itself at 10 active games in parallel
 - keeps running through transient API failures
 
 ## Setup
@@ -35,13 +35,13 @@ That behavior is controlled with:
 - `KRIEGSPIEL_AUTO_CREATE_PLAY_AS=white|black|random`
 - `KRIEGSPIEL_SUPPORTED_RULE_VARIANTS=berkeley_any`
 
-The bot will not intentionally create or join beyond 5 active games in parallel.
+The bot will not intentionally create or join beyond 10 active games in parallel. It still keeps at most one open waiting lobby game advertised at a time.
 
 Bot-vs-bot play is also enabled by default:
 
-- the bot samples open waiting games at most once per minute
+- the bot samples open waiting games at most once every five minutes
 - it will only consider games created by another bot
-- it will try to join one with 50% probability on a poll cycle
+- it will try to join one with 1% probability on a scan
 - it keeps the local cooldown even when no join candidate is found, matching backend bot-join limits and avoiding tight lobby scans
 
 ## systemd
